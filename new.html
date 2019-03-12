@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	<button onclick='startAudioContext()'>TURN ON</button>
+	<button class='stop'>TURN OFF</button>
+
+	<br>
+	Osc 1:
+	Gain: <input min='0' step='0.01' max='.3' type='range' oninput='changeGain(event,0)'/>	
+	Shape: <button onclick='changeWaveform(event,0)'>sine</button>
+	<button onclick='changeWaveform(event,0)'>square</button>
+	<button onclick='changeWaveform(event,0)'>sawtooth</button>
+	Detune: <input min='-5' step='.01' max='5' type='range' oninput='changeDetune(event,0)'/>
+	Octave: <input min='-3' step='1' max='3' type='range' oninput='changeOctave(event,0)'/>	
+
+	<br>
+	Osc 2:
+	Gain: <input min='0' step='0.01' max='.3' type='range' oninput='changeGain(event,1)'/>	
+	Shape: <button onclick='changeWaveform(event,1)'>sine</button>
+	<button onclick='changeWaveform(event,1)'>square</button>
+	<button onclick='changeWaveform(event,1)'>sawtooth</button>
+	Detune: <input min='-5' step='.01' max='5' type='range' oninput='changeDetune(event,1)'/>
+	Octave: <input min='-3' step='1' max='3' type='range' oninput='changeOctave(event,1)'/>	
+	<br>
+	Osc 3:
+	Gain: <input min='0' step='0.01' max='.3' type='range' oninput='changeGain(event,2)'/>	
+	Shape: <button onclick='changeWaveform(event,2)'>sine</button>
+	<button onclick='changeWaveform(event,2)'>square</button>
+	<button onclick='changeWaveform(event,2)'>sawtooth</button>
+	Detune: <input min='-5' step='.01' max='5' type='range' oninput='changeDetune(event,2)'/>
+	Octave: <input min='-3' step='1' max='3' type='range' oninput='changeOctave(event,2)'/>	
+	<br>
+	Osc 4:
+	Gain: <input min='0' step='0.01' max='.3' type='range' oninput='changeGain(event,3)'/>	
+	Shape: <button onclick='changeWaveform(event,3)'>sine</button>
+	<button onclick='changeWaveform(event,3)'>square</button>
+	<button onclick='changeWaveform(event,3)'>sawtooth</button>
+	Detune: <input min='-5' step='.01' max='5' type='range' oninput='changeDetune(event,3)'/>
+	Octave: <input min='-3' step='1' max='3' type='range' oninput='changeOctave(event,3)'/>	
+
+	<br>
+	Filter Cutoff: <input min='0.0001' step='0.01' max='2000' type='range' oninput='changeCutoff(event)'/>
+	Resonance: <input min='0' step='0.01' max='40' type='range' oninput='changeResonance(event)'/>
+	<br>
+	Filter Attack: <input min='0' step='0.01' max='3' type='range' value='1' oninput='changeFfilterParam(event,0)'/>
+	Decay: <input min='0' step='0.01' max='3' type='range' value='1' oninput='changeFfilterParam(event,1)'/>
+	Sustain: <input min='0' step='0.01' max='3' type='range' value='1' oninput='changeFfilterParam(event,2)'/>
+	Release: <input min='0' step='0.01' max='3' type='range' value='1' oninput='changeFfilterParam(event,3)'/>
+
+	<br>
+	AMP R: <input min='0' step='0.1' max='10' type='range' oninput='changeRelease(event)'/>
+
+
+	<br>
+	Keyboard:
+	<button onclick='setPitch(event)' pitch='131'>C</button>
+	<button onclick='setPitch(event)' pitch='147'>D</button>
+	<button onclick='setPitch(event)' pitch='165'>E</button>
+	<button onclick='setPitch(event)' pitch='175'>F</button>
+	<button onclick='setPitch(event)' pitch='196'>G</button>
+	<button onclick='setPitch(event)' pitch='220'>A</button>
+	<button onclick='setPitch(event)' pitch='247'>B</button>
+	<button onclick='setPitch(event)' pitch='261'>C</button>
+
+	<br>
+
+	SEQ 
+	<button onclick='startSeq()'>Start</button>
+	<button onclick='playing = false'>Stop</button>
+	BPM:
+	<input type='number' oninput="changeBPM(event)" value='60' />
+	<br>
+	<input type='number' oninput="changeSeq(event,0)" value='131' />
+	<input type='number' oninput="changeSeq(event,1)" value='165'/>
+	<input type='number' oninput="changeSeq(event,2)" value='196'/>
+	<input type='number' oninput="changeSeq(event,3)" value='247'/>
+	<input type='number' oninput="changeSeq(event,4)" value='261'/>
+	<input type='number' oninput="changeSeq(event,5)" value='247'/>
+	<input type='number' oninput="changeSeq(event,6)" value='196'/>
+	<input type='number' oninput="changeSeq(event,7)" value='165'/>
+
+	<canvas id="canvas" width="300" height="300">
+  		An alternative text describing what your canvas displays. 
+	</canvas>
+
+<script type="text/javascript">
+
+var pitches = {
+	'C':131,
+	'D': 147,
+	'E': 165,
+	'F': 175,
+	'G': 196,
+	'A': 220,
+	'B': 247,
+	'c': 261
+}
+function changeSeq(e,i){
+	sequence[i] = e.target.value;
+}
+function changeBPM(e){
+	bpm = e.target.value;
+}
+
+var sequence = [131, 165, 196,247, 261, 247,196, 165,]
+var bpm = 60;
+var seqPosition = 0;
+
+var gain = [], 
+	oscNum = 4,
+	osc = [], 
+	context,  
+	masterGain,  
+	release = 5.0,  
+	filterParams = [0,1,1,1],  
+	typeVals = ['sine','sawtooth','sine','sine'],
+	gainVals = [.1,.1,.1,.1],
+	detuneVals = [0,0.2,-0.1,-0.3],
+	frequencyVals = [440,440,440,440],
+	resonanceVal = 0,
+	cutoffVal = 1000,
+	octaveVals = [0.01,1,1,1],
+	init = false,
+	playing = false;
+
+function changeCutoff(e){
+	cutoffVal = e.target.value;
+}
+function changeResonance(e){
+	biquadFilter.Q.value = e.target.value;
+}
+function setPitch(e){
+	pitch = parseFloat(e.target.getAttribute('pitch'));
+	for (var i = 0; i < oscNum; i++){
+		frequencyVals[i] = pitch;
+		osc[i].frequency.value = frequencyVals[i] * octaveVals[i] + detuneVals[i];
+	}
+	bang();
+}
+
+function bang(){
+	console.log('bang!')
+	biquadFilter.frequency.cancelScheduledValues(context.currentTime)
+	masterGain.gain.cancelScheduledValues(context.currentTime)
+	masterGain.gain.value = 0;
+	masterGain.gain.value = .7;
+	masterGain.gain.setTargetAtTime(0, context.currentTime, Math.floor(release * 1000)/1000);
+	biquadFilter.frequency.setValueAtTime(20, context.currentTime);
+	offset = Math.floor(filterParams[0] * 1000)/1000;
+	biquadFilter.frequency.linearRampToValueAtTime(cutoffVal, context.currentTime + offset)
+	offset = offset + Math.floor(filterParams[2] * 1000)/1000;
+	biquadFilter.frequency.linearRampToValueAtTime(cutoffVal, context.currentTime + offset)
+	offset = offset + Math.floor(filterParams[3] * 1000)/1000;	
+	biquadFilter.frequency.linearRampToValueAtTime(0, context.currentTime + offset)
+}
+
+function changeFfilterParam(e,i){
+	filterParams[i] = e.target.value;
+}
+
+function changeRelease(e){
+	release = e.target.value;
+}
+
+function startAudioContext(){
+	if (!init) {
+		init = true;
+		context = new AudioContext();
+		biquadFilter = context.createBiquadFilter();
+		biquadFilter.type = 'lowpass';
+		biquadFilter.frequency.value = cutoffVal;
+		biquadFilter.Q.value = resonanceVal;
+		masterGain = context.createGain();
+		masterGain.gain.value = 0;
+		var analyser = context.createAnalyser();
+
+		analyser.fftSize = 2048;
+		var analyser = context.createAnalyser();
+		var bufferLength = analyser.frequencyBinCount;
+		var dataArray = new Uint8Array(bufferLength);
+
+		var canvas = document.getElementById('canvas');
+		var canvasCtx = canvas.getContext('2d');
+
+		WIDTH = 400;
+		HEIGHT = 150;
+		canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
+
+		function draw() {
+			var drawVisual = requestAnimationFrame(draw);
+			analyser.getByteTimeDomainData(dataArray);
+			canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+			canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+			canvasCtx.lineWidth = 2;
+			canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
+			canvasCtx.beginPath();
+			var sliceWidth = WIDTH * 1.0 / bufferLength;
+			var x = 0;
+			for(var i = 0; i < bufferLength; i++) {
+   
+		        var v = dataArray[i] / 128.0;
+		        var y = v * HEIGHT/2;
+
+		        if(i === 0) {
+		          canvasCtx.moveTo(x, y);
+		        } else {
+		          canvasCtx.lineTo(x, y);
+		        }
+
+		        x += sliceWidth;
+		    }
+		    canvasCtx.lineTo(canvas.width, canvas.height/2);
+      		canvasCtx.stroke();
+    	};
+
+    	draw();
+
+
+		
+
+		for (var i = 0; i < oscNum; i++){
+			osc[i] = context.createOscillator()
+			osc[i].type = typeVals[i];
+			gain[i] = context.createGain();
+			gain[i].gain.value = gainVals[i];
+			osc[i].frequency.value = frequencyVals[i] * octaveVals[i] + detuneVals[i];
+			osc[i].connect(gain[i]);
+			gain[i].connect(masterGain);
+			osc[i].start();
+		}
+		masterGain.connect(biquadFilter);
+		biquadFilter.connect(analyser);
+
+		analyser.connect(context.destination);
+		
+		var request = new XMLHttpRequest();
+		var url = 'Kick16.wav'
+	  	request.open('GET', url, true);
+	  	request.responseType = 'arraybuffer';
+
+	 	 // Decode asynchronously
+	 	 request.onload = function() {
+	  	  context.decodeAudioData(request.response, function(buffer) {
+	  	    dogBarkingBuffer = buffer;
+	  	  }, onError);
+	  	}
+	  	request.send()
+
+		
+	}
+	
+}
+
+function startSeq(){
+	if (!playing){
+		playing = true;
+		loop();
+	}
+}
+
+function loop(){
+		
+	if(!playing){
+		seqPosition = 0;
+        return;
+    }
+    else {
+    	if (sequence[seqPosition] > 20){
+    		for (var i = 0; i < oscNum; i++){
+					frequencyVals[i] = parseFloat(sequence[seqPosition]);
+					osc[i].frequency.value = frequencyVals[i] * octaveVals[i] + detuneVals[i];
+			}
+			bang();
+		}
+		seqPosition++
+		if (sequence.length <= seqPosition)
+			seqPosition = 0
+        setTimeout(loop, 15000/bpm); // check again in a second
+    }
+}
+
+function changeOctave(e,i){
+	octaveVals[i] = Math.pow(2, e.target.value);
+	osc[i].frequency.value = frequencyVals[i] * octaveVals[i];
+}
+
+function changeWaveform(e,i){
+	osc[i].type = e.target.innerHTML;
+}
+
+function changeGain(e,i){
+	gain[i].gain.value = e.target.value;
+}
+
+function changeDetune(e, i){
+	detuneVals[i] = Math.floor(e.target.value * 100)/100;
+}
+document.querySelector('.stop').addEventListener('click', function(){
+	for (var i = 0; i < oscNum; i++){
+		gainVals[i] = gain[i].gain.value;
+		typeVals[i] = osc[i].type;
+		osc[i].stop()
+	}
+	cutoffVal = biquadFilter.frequency.value;
+	resonanceVal = biquadFilter.Q.value;
+	playing = false;
+	init = false;
+})
+</script>
+
+</body>
+</html>

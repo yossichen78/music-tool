@@ -54,37 +54,51 @@
 	AMP R: <input min='0' step='0.1' max='10' type='range' oninput='changeRelease(event)'/>
 
 
-	<br>
-	Keyboard:
-	<button onclick='setPitch(event)' pitch='131'>C</button>
-	<button onclick='setPitch(event)' pitch='147'>D</button>
-	<button onclick='setPitch(event)' pitch='165'>E</button>
-	<button onclick='setPitch(event)' pitch='175'>F</button>
-	<button onclick='setPitch(event)' pitch='196'>G</button>
-	<button onclick='setPitch(event)' pitch='220'>A</button>
-	<button onclick='setPitch(event)' pitch='247'>B</button>
-	<button onclick='setPitch(event)' pitch='261'>C</button>
+	<div>
+		Keyboard:
+		<button onclick='setPitch(event)' pitch='131'>C</button>
+		<button onclick='setPitch(event)' pitch='147'>D</button>
+		<button onclick='setPitch(event)' pitch='165'>E</button>
+		<button onclick='setPitch(event)' pitch='175'>F</button>
+		<button onclick='setPitch(event)' pitch='196'>G</button>
+		<button onclick='setPitch(event)' pitch='220'>A</button>
+		<button onclick='setPitch(event)' pitch='247'>B</button>
+		<button onclick='setPitch(event)' pitch='261'>C</button>
+	</div>
+	<div>
+		<canvas id="canvas" width="300" height="300">
+	  		An alternative text describing what your canvas displays. 
+		</canvas>
+	</div>
+	<div>
 
-	<br>
+		SEQ 
+		<button onclick='startSeq()'>Start</button>
+		<button onclick='playing = false'>Stop</button>
+		BPM:
+		<input type='number' oninput="changeBPM(event)" value='60' />
+		<br>
+		<input type='number' oninput="changeSeq(event,0)" value='131' />
+		<input type='number' oninput="changeSeq(event,1)" value='165'/>
+		<input type='number' oninput="changeSeq(event,2)" value='196'/>
+		<input type='number' oninput="changeSeq(event,3)" value='247'/>
+		<input type='number' oninput="changeSeq(event,4)" value='261'/>
+		<input type='number' oninput="changeSeq(event,5)" value='247'/>
+		<input type='number' oninput="changeSeq(event,6)" value='196'/>
+		<input type='number' oninput="changeSeq(event,7)" value='165'/>
+	</div>
+	<div>
+		Kick: 
+		<input type='checkbox' oninput="changeSampleSeq(event,0,0)" checked='true'/>
+		<input type='checkbox' oninput="changeSampleSeq(event,0,1)" />
+		<input type='checkbox' oninput="changeSampleSeq(event,0,2)" />
+		<input type='checkbox' oninput="changeSampleSeq(event,0,3)" />
+		<input type='checkbox' oninput="changeSampleSeq(event,0,4)" checked='true'/>
+		<input type='checkbox' oninput="changeSampleSeq(event,0,5)" />
+		<input type='checkbox' oninput="changeSampleSeq(event,0,6)" />
+		<input type='checkbox' oninput="changeSampleSeq(event,0,7)" />		
+	</div>
 
-	SEQ 
-	<button onclick='startSeq()'>Start</button>
-	<button onclick='playing = false'>Stop</button>
-	BPM:
-	<input type='number' oninput="changeBPM(event)" value='60' />
-	<br>
-	<input type='number' oninput="changeSeq(event,0)" value='131' />
-	<input type='number' oninput="changeSeq(event,1)" value='165'/>
-	<input type='number' oninput="changeSeq(event,2)" value='196'/>
-	<input type='number' oninput="changeSeq(event,3)" value='247'/>
-	<input type='number' oninput="changeSeq(event,4)" value='261'/>
-	<input type='number' oninput="changeSeq(event,5)" value='247'/>
-	<input type='number' oninput="changeSeq(event,6)" value='196'/>
-	<input type='number' oninput="changeSeq(event,7)" value='165'/>
-
-	<canvas id="canvas" width="300" height="300">
-  		An alternative text describing what your canvas displays. 
-	</canvas>
 
 <script type="text/javascript">
 
@@ -98,6 +112,9 @@ var pitches = {
 	'B': 247,
 	'c': 261
 }
+function changeSampleSeq(e,i,j){
+	sampleSequence[j] = e.target.checked;
+}
 function changeSeq(e,i){
 	sequence[i] = e.target.value;
 }
@@ -105,10 +122,12 @@ function changeBPM(e){
 	bpm = e.target.value;
 }
 
+var samples = [];
+var sampleSequence = [1,0,0,0,1,0,0,0];
 var sequence = [131, 165, 196,247, 261, 247,196, 165,]
 var bpm = 60;
 var seqPosition = 0;
-
+var dogBarkingBuffer;
 var gain = [], 
 	oscNum = 4,
 	osc = [], 
@@ -218,9 +237,6 @@ function startAudioContext(){
 
     	draw();
 
-
-		
-
 		for (var i = 0; i < oscNum; i++){
 			osc[i] = context.createOscillator()
 			osc[i].type = typeVals[i];
@@ -236,22 +252,33 @@ function startAudioContext(){
 
 		analyser.connect(context.destination);
 		
-		var request = new XMLHttpRequest();
-		var url = 'Kick16.wav'
-	  	request.open('GET', url, true);
-	  	request.responseType = 'arraybuffer';
+		var urls = ['https://raw.githubusercontent.com/yossichen78/music-tool/master/Kick16.wav'];
+		for(let i = 0; i < urls.length; i++){
+			var request = new XMLHttpRequest();
 
-	 	 // Decode asynchronously
-	 	 request.onload = function() {
-	  	  context.decodeAudioData(request.response, function(buffer) {
-	  	    dogBarkingBuffer = buffer;
-	  	  }, onError);
-	  	}
-	  	request.send()
+		  	request.open('GET', urls[i], true);
+		  	request.responseType = 'arraybuffer';
+
+		 	 // Decode asynchronously
+		 	request.onload = function() {
+		  	  	context.decodeAudioData(request.response, function(buffer) {
+		  	    	samples[i] = buffer;
+		  	  	});
+		  	}
+		  	request.send()
+		 }
 
 		
 	}
 	
+}
+
+function playSound(buffer) {
+  var source = context.createBufferSource(); // creates a sound source
+  source.buffer = buffer;                    // tell the source which sound to play
+  source.connect(context.destination);       // connect the source to the context's destination (the speakers)
+  source.start(0);                           // play the source now
+                                             // note: on older systems, may have to use deprecated noteOn(time);
 }
 
 function startSeq(){
@@ -275,6 +302,10 @@ function loop(){
 			}
 			bang();
 		}
+		if (sampleSequence[seqPosition]){
+			playSound(samples[0]);
+		}
+
 		seqPosition++
 		if (sequence.length <= seqPosition)
 			seqPosition = 0

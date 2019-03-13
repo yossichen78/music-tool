@@ -7,7 +7,10 @@
 <body onkeydown="keyPress(event)">
 	<button onclick='startAudioContext()'>TURN ON</button>
 	<button class='stop'>TURN OFF</button>
-
+	<div>
+		Yossynth
+		Instructions: Turn on to start sound engine. Keys 1 - 4 control drum samples, keyz z - , control synthesizer. Refresh to reset!
+	</div>
 	<br>
 	Osc 1:
 	Gain: <input min='0' step='0.01' max='.3' type='range' oninput='changeGain(event,0)'/>	
@@ -119,6 +122,9 @@ function keyPress(e){
 	console.log(e.keyCode)
 	if (keyboardPitchMap[e.keyCode])
 		playPitch(keyboardPitchMap[e.keyCode])
+	if (samples[e.keyCode-49])
+		playSound(samples[e.keyCode-49])
+
 }
 var keyboardPitchMap = {
 	90:131,

@@ -5,11 +5,20 @@
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">	
 </head>
 <body onkeydown="keyPress(event)">
-	<button onclick='startAudioContext()'>TURN ON</button>
-	<button class='stop'>TURN OFF</button>
+	<button onclick='init()'>TURN ON</button>
+	<button onclick='turnOff()'>TURN OFF</button>
+	<button onclick='savePreset()'>Save Preset</button>
+	Preset: <select onchange='loadPreset(this)'>
+		<option>preset1</option>
+		<option>preset2</option>
+		<option>preset3</option>
+		<option>preset4</option>
+	</select>
+
+	Synth Mode: <input type='radio' name='synthmode' onclick="modeClick(this);" value="0" checked="checked"> Mono </input> <input name='synthmode' type='radio' onclick="modeClick(this);" value="1"> Poly </input>
 	<div>
 		Yossynth
-		Instructions: Turn on to start sound engine. Keys 1 - 4 control drum samples, keyz z - , control synthesizer. Refresh to reset!
+		Instructions: Turn on to start sound engine. Keys 1 - 4 control drum samples, keyz (z - ,) and (q - i) control synthesizer. Refresh to reset! Try the different presets! More features coming soon
 	</div>
 	<br>
 	Osc 1:
@@ -46,32 +55,35 @@
 	Octave: <input min='-3' step='1' max='3' type='range' oninput='changeOctave(event,3)' value='1'/>	
 
 	<br>
-	Filter Cutoff: <input min='0.0001' step='0.01' max='2000' type='range' oninput='changeCutoff(event)' value='1500'/>
-	Resonance: <input min='0' step='0.01' max='40' type='range' oninput='changeResonance(event)' value='9.3' />
+	Filter Cutoff: <input min='0.0001' step='0.01' max='2000' type='range' oninput='changeParam(event,"cutoffVal")' value='1500'/>
+	Resonance: <input min='0' step='0.01' max='40' type='range' oninput='changeParam(event,"resonanceVal")' value='9.3' />
 	<br>
-	Filter Attack: <input min='0' step='0.01' max='2' type='range' value='0' oninput='changeFfilterParam(event,0)' value='0.1'/>
-	Decay: <input min='0' step='0.01' max='1' type='range' value='.2' oninput='changeFfilterParam(event,1)'/>
-	Sustain: <input min='0' step='0.01' max='1' type='range' value='.2' oninput='changeFfilterParam(event,2)' value='0.5'/>
-	Release: <input min='0' step='0.01' max='1' type='range' value='.3' oninput='changeFfilterParam(event,3)' value='0.9'/>
+	Filter Attack: <input min='0' step='0.01' max='2' type='range' value='0' oninput='changeParam(event,"filterParams",0)' value='0.1'/>
+	<!-- Decay: <input min='0' step='0.01' max='1' type='range' value='.2' oninput='changeParam(event,"filterParams",1)'/> -->
+	Sustain: <input min='0' step='0.01' max='2' type='range' value='.2' oninput='changeParam(event,"filterParams",1)' value='0.5'/>
+	Release: <input min='0' step='0.01' max='2' type='range' value='.3' oninput='changeParam(event,"filterParams",2)' value='0.9'/>
 
 	<br>
-	<!-- AMP R: <input min='0' step='0.1' max='10' type='range' oninput='changeRelease(event)'/> -->
+	AMP Attack: <input min='0' step='0.01' max='2' type='range' oninput='changeParam(event, "ampParams",0)'/>
+	<!-- AMP Decay: <input min='0' step='0.1' max='10' type='range' oninput='changeParam(event, "ampParams",1)'/>	 -->
+	Sustain: <input min='0' step='0.01' max='2' type='range' oninput='changeParam(event, "ampParams",1)'/>
+	Release: <input min='0' step='0.01' max='2' type='range' oninput='changeParam(event, "ampParams",2)'/>
 
 
 	<div on>
 		Keyboard:
-		<button onclick='setPitch(event)' pitch='131'>C</button>
-		<button onclick='setPitch(event)' pitch='147'>D</button>
-		<button onclick='setPitch(event)' pitch='165'>E</button>
-		<button onclick='setPitch(event)' pitch='175'>F</button>
-		<button onclick='setPitch(event)' pitch='196'>G</button>
-		<button onclick='setPitch(event)' pitch='220'>A</button>
-		<button onclick='setPitch(event)' pitch='247'>B</button>
-		<button onclick='setPitch(event)' pitch='261'>C</button>
+		<button onclick='playPitch(131)'>C</button>
+		<button onclick='playPitch(147)'>D</button>
+		<button onclick='playPitch(165)'>E</button>
+		<button onclick='playPitch(175)'>F</button>
+		<button onclick='playPitch(196)'>G</button>
+		<button onclick='playPitch(220)'>A</button>
+		<button onclick='playPitch(247)'>B</button>
+		<button onclick='playPitch(261)'>C</button>
 	</div>
 	<div>
 		<canvas id="canvas" width="300" height="300">
-	  		An alternative text describing what your canvas displays. 
+	  	Oscillator Graph
 		</canvas>
 	</div>
 	<div>
@@ -80,7 +92,7 @@
 		<button onclick='startSeq()'>Start</button>
 		<button onclick='playing = false'>Stop</button>
 		BPM:
-		<input type='number' oninput="changeBPM(event)" value='110' />
+		<input type='number' oninput="changeParam(event,'bpm')" value='110' />
 		
 	</div>
 	<div id='synthSeq'>	
@@ -103,8 +115,8 @@
 
 function buildSynthSeq(i){
 	elem = document.getElementById('synthSeq')
-	elem.insertAdjacentHTML('beforeend',"<input style='width:50px' type='number' oninput='changeSeq(event,"+i+")'' value='"+sequence[i]+"' />")
-
+	elemString = "<input style='width:50px' type='number' oninput='changeParam(event,\"sequence\","+i+")'' value='"+sequence[i]+"' />"
+	elem.insertAdjacentHTML('beforeend', elemString)
 }
 
 function buildSampleSeq(i){
@@ -115,7 +127,6 @@ function buildSampleSeq(i){
 		else
 			elem.insertAdjacentHTML('beforeend',"<input type='checkbox' oninput='changeSampleSeq(event,"+j+","+i+")' />")
 	}
-
 }
 
 function keyPress(e){
@@ -124,7 +135,6 @@ function keyPress(e){
 		playPitch(keyboardPitchMap[e.keyCode])
 	if (samples[e.keyCode-49])
 		playSound(samples[e.keyCode-49])
-
 }
 var keyboardPitchMap = {
 	90:131,
@@ -134,124 +144,212 @@ var keyboardPitchMap = {
 	66: 196,
 	78: 220,
 	77: 247,
-	188: 261
+	188: 261,
+	81: 261,
+	87: 294,
+	69: 330,
+	82: 350,
+	84: 392,
+	89: 440,
+	85: 494,
+	73: 522
 }
 function changeSampleSeq(e,i,j){
 	sampleSequence[i][j] = e.target.checked;
 }
-function changeSeq(e,i){
-	sequence[i] = e.target.value;
-}
-function changeBPM(e){
-	bpm = e.target.value;
-}
 
-var samples = [];
-var sampleSequence = [
+
+var gain = [], 
+	masterGain,
+	currentVoice = 0,
+	oscNum = 4,
+	osc = [], 
+	biquadFilter = [],
+	voiceGain = [],
+	merger = [],
+	context,  
+	samples = [],
+	initiated = false,
+	seqPosition = 0,
+	playing = false;
+
+var preset1 = {"voiceNum":1,"bpm":125,"ampParams":[0,0.57,0.45],"filterParams":[0,0.08,0.16],"typeVals":["sine","sawtooth","sine","sine"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0,0.3,-0.2,-0.3],"frequencyVals":[196,196,196,196],"resonanceVal":13.16,"cutoffVal":1268.6401,"octaveVals":[1,0.5,1,0.25],"sequence":[220,0,110,0,110,0,110,0,196,272,220,0,261,220,165,0],"urls":["https://raw.githubusercontent.com/yossichen78/music-tool/master/Kick16.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Snare10.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Closedhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Rimshot01.wav"],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,false,true,0,0,0,0,0,0,0,true,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[true,true,1,true,true,true,1,true,true,true,1,true,true,true,1,true,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[false,0,false,0,0,false,false,0,false,false,0,false,false,false,0,false,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0]]}
+var preset2 = {
+	voiceNum: 4,	
+	bpm: 110,
+	ampParams: [0,1.0,1.0],
+	filterParams: [0.1,.5,.88],
+	typeVals: ['sine','sawtooth','sine','sine'],
+	gainVals: [.5,.5,.5,.5],
+	detuneVals: [0,0.3,-0.2,-0.3],
+	frequencyVals: [440,440,440,440],
+	resonanceVal: 9.3,
+	cutoffVal: 1500,
+	octaveVals: [.25,.5,1,2],
+ 	sequence: [ 
+	220,0,0,0, 	0,0,0,0, 	196,0,220,0, 	261,0,165,0,
+	0,0,0,0, 	0,0,0,0, 	147,0,165,0, 	196,0,131,0,
+	0,0,0,0,	0,0,0,0, 	123,0,131,0, 	165,0,110,0,
+	0,0,0,0, 	0,0,0,0,    123,0,0,0, 		131,0,0,0
+	],
+	urls: [
+	'https://raw.githubusercontent.com/yossichen78/music-tool/master/Kick16.wav',
+	'https://raw.githubusercontent.com/yossichen78/music-tool/master/Snare10.wav',
+	'https://raw.githubusercontent.com/yossichen78/music-tool/master/Closedhat01.wav',	
+	'https://raw.githubusercontent.com/yossichen78/music-tool/master/Rimshot01.wav'
+	],
+	sampleSequence: [
 	[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
 	[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],	
 	[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
 	[1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0]	
 	]
+}
+var preset3 = {"voiceNum":4,"bpm":66,"ampParams":[1,0.69,0.66],"filterParams":[0.77,0.43,0.52],"typeVals":["sine","sawtooth","sine","sine"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0.51,-0.54,0.69,-1.65],"frequencyVals":[535,535,535,535],"resonanceVal":2.73,"cutoffVal":1228.6201,"octaveVals":[2,4,1,0.25],"sequence":[272,0,272,676,110,342,110,0,196,272,220,236,156,220,165,535],"urls":["https://raw.githubusercontent.com/yossichen78/music-tool/master/Kick16.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Snare10.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Closedhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Rimshot01.wav"],"sampleSequence":[[1,true,false,true,false,0,0,0,1,0,0,0,1,true,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,false,false,true,0,0,0,true,0,0,0,false,false,true,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[false,true,1,false,true,true,false,false,false,true,false,true,true,true,1,true,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[false,0,true,false,false,true,false,false,true,false,false,false,true,true,0,false,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0]]}
 
-var urls = [
-	'https://raw.githubusercontent.com/yossichen78/music-tool/master/Kick16.wav',
-	'https://raw.githubusercontent.com/yossichen78/music-tool/master/Snare10.wav',
-	'https://raw.githubusercontent.com/yossichen78/music-tool/master/Closedhat01.wav',	
-	'https://raw.githubusercontent.com/yossichen78/music-tool/master/Rimshot01.wav'
-	];
+var preset4 = {"voiceNum":4,"bpm":110,"ampParams":[0,1,1.13],"filterParams":[0,1.08,1.08],"typeVals":["sine","sawtooth","sine","sine"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[-0.26,0.3,-0.2,-0.3],"frequencyVals":[165,165,165,165],"resonanceVal":9.3,"cutoffVal":1500,"octaveVals":[2,1,4,0.5],"sequence":[220,0,0,0,0,0,0,0,196,0,220,0,261,0,165,0,0,0,0,0,0,0,0,0,147,0,165,0,196,0,131,0,0,0,0,0,0,0,0,0,123,0,131,0,165,0,110,0,0,0,0,0,0,0,0,0,123,0,0,0,131,0,0,0],"urls":["https://raw.githubusercontent.com/yossichen78/music-tool/master/Kick16.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Snare10.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Closedhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Rimshot01.wav"],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[false,false,false,false,false,false,false,false,0,0,true,0,0,false,1,false,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0]]}
+preset = preset1;
 
-// var sequence = [131, 165, 196,247, 261, 247,196, 165,131, 165, 196,247, 261, 247,196, 165]
-var sequence = [ 
-	220,0,0,0, 	0,0,0,0, 	196,0,220,0, 	261,0,165,0,
-	0,0,0,0, 	0,0,0,0, 	147,0,165,0, 	196,0,131,0,
-	0,0,0,0,	0,0,0,0, 	123,0,131,0, 	165,0,110,0,
-	0,0,0,0, 	0,0,0,0,    123,0,0,0, 		131,0,0,0
-	]
+var bpm,
+	voiceNum,  
+	ampParams,  
+	filterParams,  
+	typeVals,
+	gainVals,
+	detuneVals,
+	frequencyVals,
+	resonanceVal,
+	cutoffVal,
+	octaveVals,
+ 	sequence,
+	urls,
+	sampleSequence;
+function setPreset(){
+	bpm = preset.bpm;
+	voiceNum = preset.voiceNum;  
+	ampParams = preset.ampParams;  
+	filterParams = preset.filterParams;  
+	typeVals = preset.typeVals;
+	gainVals = preset.gainVals;
+	detuneVals = preset.detuneVals;
+	frequencyVals = preset.frequencyVals;
+	resonanceVal = preset.resonanceVal;
+	cutoffVal = preset.cutoffVal;
+	octaveVals = preset.octaveVals;
+ 	sequence = preset.sequence;
+	urls = preset.urls;
+	sampleSequence = preset.sampleSequence;
+}
+setPreset()
 
-for (let i = 0; i < sequence.length; i++){
-	buildSynthSeq(i)
-	buildSampleSeq(i)
+function savePreset(){
+	preset.bpm = bpm;
+	preset.voiceNum = voiceNum;  	
+	preset.ampParams = ampParams;
+	preset.filterParams = filterParams;
+	preset.typeVals = typeVals;
+	preset.gainVals = gainVals;
+	preset.detuneVals = detuneVals;
+	preset.frequencyVals = frequencyVals;
+	preset.resonanceVal = resonanceVal;
+	preset.cutoffVal = cutoffVal;
+	preset.octaveVals = octaveVals;
+ 	preset.sequence = sequence;
+	preset.urls = urls;
+	preset.sampleSequence = sampleSequence;
+
+	console.log(JSON.stringify(preset));
 }	
-
-var bpm = 110;
-var seqPosition = 0;
-var dogBarkingBuffer;
-var gain = [], 
-	oscNum = 4,
-	osc = [], 
-	context,  
-	masterGain,  
-	release = 5.0,  
-	filterParams = [0.1,1,.5,.88],  
-	typeVals = ['sine','sawtooth','sine','sine'],
-	gainVals = [.1,.1,.1,.1],
-	detuneVals = [0,0.3,-0.2,-0.3],
-	frequencyVals = [440,440,440,440],
-	resonanceVal = 9.3,
-	cutoffVal = 1500,
-	octaveVals = [.25,.5,1,2],
-	init = false,
-	playing = false;
-
-function changeCutoff(e){
-	console.log(e.target.value)
-	cutoffVal = e.target.value;
+function loadPreset(myRadio) {
+	console.log(myRadio)
+	console.log(myRadio.value)
+	console.log(window[myRadio.value])
+    turnOff()
+    preset = window[myRadio.value]
+	setPreset()
+    init()
 }
-function changeResonance(e){
-	console.log(e.target.value)
-	biquadFilter.Q.value = e.target.value;
+
+function modeClick(myRadio) {
+    turnOff()
+    if (myRadio.value == 1)
+    	voiceNum = 4;
+    else
+    	voiceNum = 1;
+    init()
+ 
 }
-function setPitch(e){
-	pitch = parseFloat(e.target.getAttribute('pitch'));
-	playPitch(pitch);
+
+function changeParam(e, val, i){
+	console.log(e)
+	value = parseFloat(e.target.value)
+	console.log(value)
+	console.log(i)
+	if (i || i === 0)
+		window[val][i] = value;
+	else
+ 		window[val] = value;
+}
+
+function setOscVal(i){
+	var value = frequencyVals[i] * octaveVals[i] + detuneVals[i];
+	console.log(i+currentVoice*oscNum)
+	osc[i+currentVoice*oscNum].frequency.value = value;
 }
 
 function playPitch(pitch){
 	for (var i = 0; i < oscNum; i++){
 		frequencyVals[i] = pitch;
-		osc[i].frequency.value = frequencyVals[i] * octaveVals[i] + detuneVals[i];
+		setOscVal(i);
 	}
 	bang();
 }
 
 function bang(){
-	biquadFilter.frequency.cancelScheduledValues(context.currentTime)
-	masterGain.gain.cancelScheduledValues(context.currentTime)
-	masterGain.gain.value = 0;
-	masterGain.gain.value = .7;
-	masterGain.gain.setTargetAtTime(0, context.currentTime, Math.floor(release * 1000)/1000);
-	biquadFilter.frequency.setValueAtTime(20, context.currentTime);
-	offset = Math.floor(filterParams[0] * 1000)/1000;
-	biquadFilter.frequency.linearRampToValueAtTime(cutoffVal, context.currentTime + offset)
-	offset = offset + Math.floor(filterParams[2] * 1000)/1000;
-	biquadFilter.frequency.linearRampToValueAtTime(cutoffVal, context.currentTime + offset)
-	offset = offset + Math.floor(filterParams[3] * 1000)/1000;	
-	biquadFilter.frequency.linearRampToValueAtTime(0, context.currentTime + offset)
+	v = currentVoice;
+	biquadFilter[v].Q.value = resonanceVal;
+	biquadFilter[v].frequency.cancelScheduledValues(context.currentTime)
+	voiceGain[v].gain.cancelScheduledValues(context.currentTime)
+	voiceGain[v].gain.setValueAtTime(voiceGain[v].gain.value, context.currentTime);
+	//A
+	var AmpAttackEnd = context.currentTime + 0.001 + Math.floor(ampParams[0] * 1000)/1000; 
+	voiceGain[v].gain.linearRampToValueAtTime(1.0, AmpAttackEnd);
+
+	//S
+	var AmpSustainEnd = AmpAttackEnd + 0.001 + Math.floor(ampParams[1] * 1000)/1000; 
+	voiceGain[v].gain.linearRampToValueAtTime(1.0, AmpSustainEnd);
+
+	//R
+	var AmpReleaseEnd = AmpSustainEnd + 0.001 + Math.floor(ampParams[2] * 1000)/1000; 
+	voiceGain[v].gain.linearRampToValueAtTime(0, AmpReleaseEnd);
+
+	biquadFilter[v].frequency.setValueAtTime(20, context.currentTime + 0.001);
+	//A 
+	var FilterAttackEnd = context.currentTime + 0.001 + Math.floor(filterParams[0] * 1000)/1000; 
+	biquadFilter[v].frequency.linearRampToValueAtTime(cutoffVal, FilterAttackEnd)
+
+	//S
+	var FilterSustainEnd = FilterAttackEnd + 0.001 + Math.floor(filterParams[1] * 1000)/1000; 
+	biquadFilter[v].frequency.linearRampToValueAtTime(cutoffVal, FilterSustainEnd)
+
+	//R
+	var FilterReleaseEnd = FilterSustainEnd + 0.001 + Math.floor(filterParams[2] * 1000)/1000; 
+	biquadFilter[v].frequency.linearRampToValueAtTime(20, FilterReleaseEnd)
+
+	currentVoice = (currentVoice+1) % voiceNum;
 }
 
-function changeFfilterParam(e,i){
-	console.log(e.target.value)
-	filterParams[i] = e.target.value;
-}
 
-function changeRelease(e){
-	console.log(e.target.value)	
-	release = e.target.value;
-}
-
-function startAudioContext(){
-	if (!init) {
-		init = true;
+function init(){
+	if (!initiated) {
+		initiated = true;		
+		for (let i = 0; i < sequence.length; i++){
+			buildSynthSeq(i)
+			buildSampleSeq(i)
+		}			
 		context = new AudioContext();
-		biquadFilter = context.createBiquadFilter();
-		biquadFilter.type = 'lowpass';
-		biquadFilter.frequency.value = cutoffVal;
-		biquadFilter.Q.value = resonanceVal;
-		masterGain = context.createGain();
-		masterGain.gain.value = 0;
+		
 		var analyser = context.createAnalyser();
-
 		analyser.fftSize = 2048;
 		var analyser = context.createAnalyser();
 		var bufferLength = analyser.frequencyBinCount;
@@ -276,55 +374,78 @@ function startAudioContext(){
 			var x = 0;
 			for(var i = 0; i < bufferLength; i++) {
    
-		        var v = dataArray[i] / 128.0;
-		        var y = v * HEIGHT/2;
+        var v = dataArray[i] / 128.0;
+        var y = v * HEIGHT/2;
 
-		        if(i === 0) {
-		          canvasCtx.moveTo(x, y);
-		        } else {
-		          canvasCtx.lineTo(x, y);
-		        }
+        if(i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
 
-		        x += sliceWidth;
-		    }
-		    canvasCtx.lineTo(canvas.width, canvas.height/2);
-      		canvasCtx.stroke();
-    	};
+        x += sliceWidth;
+	    }
+	    canvasCtx.lineTo(canvas.width, canvas.height/2);
+    	canvasCtx.stroke();
+  	};
 
-    	draw();
+    draw();
 
-		for (var i = 0; i < oscNum; i++){
-			osc[i] = context.createOscillator()
-			osc[i].type = typeVals[i];
-			gain[i] = context.createGain();
-			gain[i].gain.value = gainVals[i];
-			osc[i].frequency.value = frequencyVals[i] * octaveVals[i] + detuneVals[i];
-			osc[i].connect(gain[i]);
-			gain[i].connect(masterGain);
-			osc[i].start();
+		for (var v = 0; v < voiceNum; v++){
+			biquadFilter[v] = context.createBiquadFilter();
+			biquadFilter[v].type = 'lowpass';
+			biquadFilter[v].frequency.value = cutoffVal;
+			biquadFilter[v].Q.value = resonanceVal;
+			voiceGain[v] = context.createGain();
+			voiceGain[v].gain.value = 0;
+ 		  merger[v] = context.createChannelMerger(oscNum);
+
 		}
-		masterGain.connect(biquadFilter);
-		biquadFilter.connect(analyser);
+		for (var i = 0; i < oscNum; i++){
+			for (var v = 0; v < voiceNum; v++){
+				osc[i+v*oscNum] = context.createOscillator()
+				osc[i+v*oscNum].type = typeVals[i];
+				gain[i+v*oscNum] = context.createGain();
+				gain[i+v*oscNum].gain.value = gainVals[i];
+				osc[i+v*oscNum].connect(gain[i+v*oscNum]);
+				gain[i+v*oscNum].connect(merger[v],0,i);
+				osc[i+v*oscNum].start();
+			}
+		}
+
+	 	masterMerger = context.createChannelMerger(voiceNum);
+	
+		for (var v = 0; v < voiceNum; v++){
+			merger[v].connect(voiceGain[v])
+			voiceGain[v].connect(biquadFilter[v]);
+			biquadFilter[v].connect(masterMerger,0,v);
+		}
+
+		masterGain = context.createGain();
+		masterMerger.connect(masterGain)
+		console.log(voiceNum)
+		if (voiceNum > 1)
+			masterGain.gain.value = 1
+		else 
+			masterGain.gain.value = .35
+
+		masterGain.connect(analyser)
 
 		analyser.connect(context.destination);
 		request = []
 		for(let i = 0; i < urls.length; i++){
-			console.log(i)
 			request[i] = new XMLHttpRequest();
-
-		  	request[i].open('GET', urls[i], true);
-		  	request[i].responseType = 'arraybuffer';
-
+	  	request[i].open('GET', urls[i], true);
+	  	request[i].responseType = 'arraybuffer';
 		 	 // Decode asynchronously
 		 	request[i].onload = function() {
-		  	  	context.decodeAudioData(request[i].response, function(buffer) {
-		  	    	samples[i] = buffer;
-		  	  	});
-		  	}
-		  	request[i].send()
-		 }
+  	  	context.decodeAudioData(request[i].response, function(buffer) {
+  	    	samples[i] = buffer;
+  	  	});
+	  	}
+	  	request[i].send()
+		}
 
-		console.log(samples)
 	}
 	
 }
@@ -332,7 +453,10 @@ function startAudioContext(){
 function playSound(buffer) {
   var source = context.createBufferSource(); // creates a sound source
   source.buffer = buffer;                    // tell the source which sound to play
-  source.connect(context.destination);       // connect the source to the context's destination (the speakers)
+  source.gain = context.createGain() 
+  source.gain.gain.value = .55                   // tell the source which sound to play
+  source.connect(source.gain);       
+  source.gain.connect(context.destination);       
   source.start(0);                           // play the source now
                                              // note: on older systems, may have to use deprecated noteOn(time);
 }
@@ -348,56 +472,55 @@ function loop(){
 		
 	if(!playing){
 		seqPosition = 0;
-        return;
-    }
-    else {
-    	if (sequence[seqPosition] > 20){
-    		for (var i = 0; i < oscNum; i++){
-					frequencyVals[i] = parseFloat(sequence[seqPosition]);
-					osc[i].frequency.value = frequencyVals[i] * octaveVals[i] + detuneVals[i];
-			}
-			bang();
+    return;
+  }
+  else {
+  	if (sequence[seqPosition] > 20){
+  		playPitch(parseFloat(sequence[seqPosition]))
 		}
 		for(var j = 0; j < sampleSequence.length; j++){
 			if (sampleSequence[j][seqPosition]){
 				playSound(samples[j]);
 			}
 		}	
-
 		seqPosition++
 		if (sequence.length <= seqPosition)
 			seqPosition = 0
-        setTimeout(loop, 15000/bpm); // check again in a second
-    }
+	  
+	  setTimeout(loop, 15000/bpm); // check again in a second
+  }
 }
 
 function changeOctave(e,i){
 	octaveVals[i] = Math.pow(2, e.target.value);
-	osc[i].frequency.value = frequencyVals[i] * octaveVals[i];
 }
 
 function changeWaveform(e,i){
-	osc[i].type = e.target.innerHTML;
+	for (var v = 0; v < voiceNum; v++){
+		osc[i+v*oscNum].type = e.target.innerHTML;
+	}
 }
 
 function changeGain(e,i){
-	gain[i].gain.value = e.target.value;
+	for (var v = 0; v < voiceNum; v++){
+		console.log('changeGain', i)
+		console.log(i+v*oscNum)
+		gain[i+v*oscNum].gain.value = e.target.value;
+	}	
 }
 
 function changeDetune(e, i){
 	detuneVals[i] = Math.floor(e.target.value * 100)/100;
 }
-document.querySelector('.stop').addEventListener('click', function(){
-	for (var i = 0; i < oscNum; i++){
-		gainVals[i] = gain[i].gain.value;
-		typeVals[i] = osc[i].type;
-		osc[i].stop()
+function turnOff(){
+	for (var v = 0; v < voiceNum; v++){
+		for (var i = 0; i < oscNum; i++){
+			osc[i+v*oscNum].stop()
+		}
 	}
-	cutoffVal = biquadFilter.frequency.value;
-	resonanceVal = biquadFilter.Q.value;
 	playing = false;
-	init = false;
-})
+	initiated = false;
+}
 </script>
 
 </body>

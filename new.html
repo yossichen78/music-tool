@@ -13,6 +13,7 @@
 		<option>preset2</option>
 		<option>preset3</option>
 		<option>preset4</option>
+		<option>preset5</option>
 	</select>
 
 	Synth Mode: <input type='radio' name='synthmode' onclick="modeClick(this);" value="0" checked="checked"> Mono </input> <input name='synthmode' type='radio' onclick="modeClick(this);" value="1"> Poly </input>
@@ -35,7 +36,11 @@
 	<!-- AMP Decay: <input min='0' step='0.1' max='10' type='range' oninput='changeParam(event, "ampParams",1)'/>	 -->
 	Sustain: <input min='0' step='0.01' max='2' type='range' oninput='changeParam(event, "ampParams",1)'/>
 	Release: <input min='0' step='0.01' max='2' type='range' oninput='changeParam(event, "ampParams",2)'/>
+	<div>
+	Delay Time: <input min='0' step='0.01' max='1' type='range' oninput='changeDelayTime(event)'/>
+	Feedback: <input min='0' step='0.01' max='1' type='range' oninput='changeDelayFeedback(event)'/>
 
+	</div>
 
 	<div on>
 		Keyboard:
@@ -127,8 +132,8 @@ function buildSampleSeq(i){
 }
 
 function keyPress(e){
-	console.log(e.keyCode)
 	if (keyboardPitchMap[e.keyCode])
+		console.log(e.keyCode, keyboardPitchMap[e.keyCode])
 		playPitch(keyboardPitchMap[e.keyCode])
 	if (samples[e.keyCode-49])
 		playSound(samples[e.keyCode-49])
@@ -168,6 +173,8 @@ function changeSampleSeq(e,i,j){
 
 var gain = [], 
 	seqPlay,
+	delay,
+	feedback,
 	masterGain,
 	currentVoice,
 	oscNum = 4,
@@ -216,9 +223,12 @@ var preset2 = {
 var preset3 = {"voiceNum":4,"bpm":66,"ampParams":[1,0.69,0.66],"filterParams":[0.77,0.43,0.52],"typeVals":["sine","sawtooth","sine","sine"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0.51,-0.54,0.69,-1.65],"frequencyVals":[535,535,535,535],"resonanceVal":2.73,"cutoffVal":1228.6201,"octaveVals":[2,4,1,0.25],"sequence":[272,0,272,676,110,342,110,0,196,272,220,236,156,220,165,535],"urls":["https://raw.githubusercontent.com/yossichen78/music-tool/master/Kick16.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Snare10.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Closedhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Rimshot01.wav"],"sampleSequence":[[1,true,false,true,false,0,0,0,1,0,0,0,1,true,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,false,false,true,0,0,0,true,0,0,0,false,false,true,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[false,true,1,false,true,true,false,false,false,true,false,true,true,true,1,true,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[false,0,true,false,false,true,false,false,true,false,false,false,true,true,0,false,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0]]}
 
 var preset4 = {"voiceNum":4,"bpm":110,"ampParams":[0,1,1.13],"filterParams":[0,1.08,1.08],"typeVals":["sine","sawtooth","sine","sawtooth"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0.83,-0.76,0.63,1.12],"frequencyVals":[220,220,220,220],"resonanceVal":9.3,"cutoffVal":1500,"octaveVals":[0.5,2,1,2],"sequence":[220,0,0,196,0,0,196,0,0,0,196,0,220,0,220,261],"urls":["https://raw.githubusercontent.com/yossichen78/music-tool/master/Kick16.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Snare10.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Closedhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Rimshot01.wav"],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,true,0,0,0,true,0,0,0,true,0,0,0,true,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]}
+var preset5 = {"delayFeedback":0.26,"delayTime":0.38,"voiceNum":1,"bpm":120,"ampParams":[0,0.1,0.03],"filterParams":[0,1.12,0],"typeVals":["square","square","square","square"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[-0.61,0.07,1.29,-0.66],"frequencyVals":[440,440,440,440],"resonanceVal":3.25,"cutoffVal":1546.0501,"octaveVals":[1,1,2,0.5],"sequence":[294,null,330,null,350,null,440,null,522,null,440,null,522,null,440,null],"urls":["https://raw.githubusercontent.com/yossichen78/music-tool/master/Kick16.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Snare10.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Closedhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/Rimshot01.wav"],"sampleSequence":[[1,0,false,0,false,0,true,0,false,0,true,0,false,0,true,0],[0,0,0,0,true,0,0,0,false,false,0,0,true,false,false,0],[true,0,true,0,true,0,true,false,true,0,true,0,true,0,true,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]}
 preset = preset1;
 
 var bpm,
+	delayTime,
+	delayFeedback,
 	voiceNum,  
 	ampParams,  
 	filterParams,  
@@ -234,6 +244,8 @@ var bpm,
 	sampleSequence;
 function setPreset(){
 	bpm = preset.bpm;
+	delayTime = preset.delayTime;  
+	delayFeedback = preset.delayFeedback;  
 	voiceNum = preset.voiceNum;  
 	ampParams = preset.ampParams;  
 	filterParams = preset.filterParams;  
@@ -252,6 +264,8 @@ setPreset()
 
 function savePreset(){
 	preset.bpm = bpm;
+	preset.delayTime = delayTime;  	
+	preset.delayFeedback = delayFeedback;  	
 	preset.voiceNum = voiceNum;  	
 	preset.ampParams = ampParams;
 	preset.filterParams = filterParams;
@@ -283,6 +297,16 @@ function modeClick(myRadio) {
     	voiceNum = 1;
     init()
  
+}
+
+function changeDelayTime(e){
+	delayTime = parseFloat(e.target.value)
+	delay.delayTime.value = delayTime;
+}
+
+function changeDelayFeedback(e){
+	delayFeedback = parseFloat(e.target.value)
+	feedback.gain.value = delayFeedback;
 }
 
 function changeParam(e, val, i){
@@ -435,7 +459,18 @@ function init(){
 		else 
 			masterGain.gain.value = .35
 
-		masterGain.connect(analyser)
+		delay = context.createDelay();
+		delay.delayTime.value = delayTime || 0;
+
+		feedback = context.createGain();
+		feedback.gain.value = delayFeedback || 0;
+
+		delay.connect(feedback);
+		feedback.connect(delay);
+
+		masterGain.connect(delay);
+		masterGain.connect(analyser);
+		delay.connect(analyser);
 
 		analyser.connect(context.destination);	
 		request = []

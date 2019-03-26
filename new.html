@@ -4,7 +4,7 @@
 	<title></title>
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">	
 </head>
-<body onkeydown="keyPress(event)">
+<body onkeydown="keyPress(event)" onkeyup="keyPress(event)">
 	<button onclick='init()'>TURN ON</button>
 	<button onclick='turnOff()'>TURN OFF</button>
 	<button onclick='savePreset()'>Save Preset</button>
@@ -84,6 +84,39 @@
 
 
 <script type="text/javascript">
+var midi =[];
+var a = 440; // a is 440 hz...
+for (var x = 0; x < 127; x++)
+{
+   midi[x] = (440 / 32) * (Math.pow(2, ((x - 9) / 12)));
+}
+console.log(midi)
+navigator.requestMIDIAccess()
+    .then(onMIDISuccess, onMIDIFailure);
+
+function onMIDISuccess(midiAccess) {
+	console.log('onMIDISuccess')
+	for (var input of midiAccess.inputs.values()){
+
+    	input.onmidimessage = getMIDIMessage;
+	}
+}
+
+function getMIDIMessage(midiMessage) {
+	console.log(midiMessage)
+    if (midiMessage.data[0] == 144 && midiMessage.data[2] > 0){
+    	console.log(midiMessage.data[1])
+		playPitch(midi[midiMessage.data[1]])
+    }
+
+}
+
+
+
+function onMIDIFailure() {
+    console.log('Could not access your MIDI devices.');
+}
+
 function buildOscSection(i){
 	elem = document.getElementById('oscSection');
 	if (i == 0){
@@ -133,11 +166,10 @@ function buildSampleSeq(i){
 
 function keyPress(e){
 	if (keyboardPitchMap[e.keyCode])
-		console.log(e.keyCode, keyboardPitchMap[e.keyCode])
 		playPitch(keyboardPitchMap[e.keyCode])
-	if (samples[e.keyCode-49])
+	else if (samples[e.keyCode-49])
 		playSound(samples[e.keyCode-49])
-	if (e.keyCode == 32){
+	else if (e.keyCode == 32){
 		if (!initiated)
 			init()
 		else{

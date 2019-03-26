@@ -106,10 +106,10 @@ function getMIDIMessage(midiMessage) {
 	// console.log(midiMessage)
     if (midiMessage.data[0] == 144 && midiMessage.data[2] > 0){
     	console.log(midiMessage.data[1])
-		startNote(midiMessage.data[1])
+		startPitch(midi[midiMessage.data[1]])
     }
     if (midiMessage.data[0] == 144 && midiMessage.data[2] == 0){
-		stopNote(midiMessage.data[1])
+		stopPitch(midi[midiMessage.data[1]])
     }
 
 }
@@ -167,15 +167,15 @@ function buildSampleSeq(i){
 
 function keyUp(e){
 	console.log('keyUp', e.keyCode)	
-	if (keyboardMidiMap[e.keyCode]){
-		console.log(keyboardMidiMap[e.keyCode])
-		stopNote(keyboardMidiMap[e.keyCode]+12)
+	if (keyboardPitchMap[e.keyCode]){
+		console.log(keyboardPitchMap[e.keyCode])
+		stopPitch(keyboardPitchMap[e.keyCode])
 	}
 }
 
 function keyPress(e){
-	if (keyboardMidiMap[e.keyCode]){
-		startNote(keyboardMidiMap[e.keyCode]+12)
+	if (keyboardPitchMap[e.keyCode]){
+		startPitch(keyboardPitchMap[e.keyCode])
 	}
 	else if (samples[e.keyCode-49])
 		playSound(samples[e.keyCode-49])
@@ -394,20 +394,9 @@ function setOscVal(i){
 }
 
 var playPitch = (pitch) => {
-	playNote(69);
-
-	currentVoice = getNextVoice()
-	setPitch(pitch);
-	bang(currentVoice);
-	usedVoices.push(currentVoice);
-	setTimeout(stopVoice,500,currentVoice)
+	startPitch(pitch);
+	setTimeout(stopPitch,100,pitch)
 }
-
-var playNote = (note) =>{
-	startNote(note)
-	setTimeout(stopNote,500,note)
-}
-
 
 var getNextVoice = ()=>{
 
@@ -417,21 +406,19 @@ var getNextVoice = ()=>{
 	else
 		return usedVoices.shift()
 }
-var startNote = (note, pitch) => {
-	stopNote(note)
-	console.log('startNote', note)
-	pitch = midi[note]
+var startPitch = (pitch) => {
+	stopPitch(pitch)
 	currentVoice = getNextVoice()
 	setPitch(pitch);
-	voicesNotes[currentVoice] = note;
+	voicesNotes[currentVoice] = pitch;
 	bang(currentVoice);
 	usedVoices.push(currentVoice);
 }
 
 
-var stopNote = (note) =>{
+var stopPitch = (pitch) =>{
 	for (var i = 0; i < voiceNum; i++){
-		if (voicesNotes[i] == note){
+		if (voicesNotes[i] == pitch){
 			stopVoice(i);
 			voicesNotes[i] = null;
 			usedVoices.splice(usedVoices.indexOf(i), 1);

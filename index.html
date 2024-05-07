@@ -46,6 +46,9 @@
 		<canvas id="canvas" width="400" height="150">
 			Oscillator Graph
 		</canvas>
+		<canvas id="canvas2" width="400" height="150">
+			Freq Graph
+		</canvas>
 	</div>
 	<div>
 
@@ -69,9 +72,9 @@
 
 
 <script type="text/javascript">
-var midi =[];
-var a = 440; // a is 440 hz...
-for (var x = 0; x < 127; x++)
+const midi =[];
+let voice; // a is 440 hz...
+for (let x = 0; x < 127; x++)
 {
 	midi[x] = (440 / 32) * (Math.pow(2, ((x - 9) / 12)));
 }
@@ -86,7 +89,6 @@ function onMIDISuccess(midiAccess) {
 }
 
 function getMIDIMessage(midiMessage) {
-	// console.log(midiMessage)
 	if (midiMessage.data[0] == 144 && midiMessage.data[2] > 0){
 		console.log(midiMessage.data[1])
 		startPitch(midi[midiMessage.data[1]])
@@ -123,7 +125,7 @@ var buildFilterSection = ()=>{
 		elem.insertAdjacentHTML('beforeend', elemString)
 }
 
-var buildAmpSection = ()=>{
+function buildAmpSection() {
 	elem = document.getElementById('ampSection');
 	while (elem.firstChild) {
 			elem.removeChild(elem.firstChild);
@@ -132,7 +134,7 @@ var buildAmpSection = ()=>{
 		elem.insertAdjacentHTML('beforeend', elemString)
 }
 
-var buildDelaySection = ()=>{
+function buildDelaySection() {
 	elem = document.getElementById('delaySection');
 	while (elem.firstChild) {
 			elem.removeChild(elem.firstChild);
@@ -177,16 +179,20 @@ function buildSeqPosition(){
 		elem.insertAdjacentHTML('beforeend',"<input type='checkbox' id='seqPosition"+i+"' onclick='return false;'>")
 }
 
+const pressedKeys = {};
 
-function keyUp(e){
-	console.log('keyUp', e.keyCode)	
+function keyUp(e) {
 	if (keyboardPitchMap[e.keyCode]){
-		console.log(keyboardPitchMap[e.keyCode])
 		stopPitch(keyboardPitchMap[e.keyCode])
 	}
+	pressedKeys[e.keyCode] = false;
+
 }
 
-function keyPress(e){
+const keyPress = (e) => {
+	if (pressedKeys[e.keyCode])
+		return;
+	pressedKeys[e.keyCode] = true;
 	if (keyboardPitchMap[e.keyCode]){
 		startPitch(keyboardPitchMap[e.keyCode])
 	}
@@ -207,7 +213,7 @@ function keyPress(e){
 		}
 	}
 }
-var keyboardPitchMap = {
+const keyboardPitchMap = {
 	90:131,
 	88: 147,
 	67: 165,
@@ -226,7 +232,7 @@ var keyboardPitchMap = {
 	73: 522
 }
 
-var keyboardMidiMap = {
+const keyboardMidiMap = {
 	90:48,
 	88: 50,
 	67: 52,
@@ -250,9 +256,9 @@ function changeSampleSeq(e,i,j){
 	console.log(e.target.checked ? 1 : 0)
 	sampleSequence[i][j] = e.target.checked ? 1 : 0;
 }
-var urls = ["https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/kick/Kick03.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/snare/Snare10.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/clap/Clap01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/closedHH/Closedhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/openHH/Openhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/tom/Tom01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/perc/Perc02.wav"]
+const urls = ["https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/kick/Kick03.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/snare/Snare10.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/clap/Clap01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/closedHH/Closedhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/openHH/Openhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/tom/Tom01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/perc/Perc02.wav"]
 
-var gain, 
+let gain, 
 	seqPlay,
 	delay,
 	feedback,
@@ -270,24 +276,8 @@ var gain,
 	playing,
 	availableVoices, 
 	usedVoices, 
-	voicesNotes;
-var preset0 = {"voiceNum":1,"bpm":125,"ampParams":[0,0.89,0.5,0.45],"filterParams":[0,0.31,1200,0.22],"typeVals":["square","square","sawtooth","sine"],"gainVals":["0.41","0.55","0.74","0.55"],"detuneVals":[0.28,0.27,0.25,0.6],"frequencyVals":[196,196,196,196],"resonanceVal":16.78,"cutoffVal":759.3201,"octaveVals":[-1,0,1,0],"sequence":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"delayTime":0,"delayFeedback":0}
-
-var preset1 = {"voiceNum":1,"bpm":125,"ampParams":[0,0.89,0.5,0.45],"filterParams":[0,0.31,1200,0.22],"typeVals":["square","square","sawtooth","sine"],"gainVals":["0.41","0.55","0.74","0.55"],"detuneVals":[0.28,0.27,0.25,0.6],"frequencyVals":[196,196,196,196],"resonanceVal":16.78,"cutoffVal":759.3201,"octaveVals":[-1,0,1,0],"sequence":[220,0,110,0,110,0,110,0,196,272,220,0,261,220,165,0],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"delayTime":0,"delayFeedback":0}
-
-var preset2 = {"voiceNum":1,"bpm":110,"ampParams":[0,1,0.5,1.44],"filterParams":[0.1,0.59,500,1.38],"typeVals":["square","sawtooth","sawtooth","sine"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0.04,0.3,-0.2,-0.3],"frequencyVals":[131,131,131,131],"resonanceVal":11.52,"cutoffVal":1300.9901,"octaveVals":[-1,0,1,0],"sequence":[220,0,0,0,0,0,0,0,196,0,220,0,261,0,165,0,0,0,0,0,0,0,0,0,147,0,165,0,196,0,131,0,0,0,0,0,0,0,0,0,123,0,131,0,165,0,110,0,0,0,0,0,0,0,0,0,123,0,0,0,131,0,0,0],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,1],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0]]}
-
-var preset3 = {"voiceNum":4,"bpm":66,"ampParams":[0.36,0.69,0.53,0.94],"filterParams":[0,0.24,918.86,0.93],"typeVals":["square","sawtooth","square","sine"],"gainVals":[0.74,0.7,0.61,0.5],"detuneVals":[0.51,-0.97,-0.24,-0.4],"frequencyVals":[110,110,110,110],"resonanceVal":2.73,"cutoffVal":1524.4001,"octaveVals":[1,4,1,0.25],"sequence":[272,0,272,676,110,342,110,0,196,272,220,236,156,220,165,535],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,1,0,1,0,0,0,0,1,0,0,0,1,1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,1,1,0,1,1,0,0,0,1,0,1,1,1,1,1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,1,0,0,1,0,0,1,0,0,0,1,1,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"delayTime":0.09,"delayFeedback":0.8}
-
-var preset4 = {"voiceNum":4,"bpm":110,"ampParams":[0,1,1,1.13],"filterParams":[0,1.08,700,1.08],"typeVals":["sine","sawtooth","sine","sawtooth"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0.41,0.41,0.42,0.56],"frequencyVals":[196,196,196,196],"resonanceVal":9.3,"cutoffVal":1500,"octaveVals":[-1,0,1,2],"sequence":[220,0,0,196,0,0,196,0,0,0,196,0,220,0,220,261],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]}
-
-var preset5 = {"delayFeedback":0.26,"delayTime":0.38,"voiceNum":1,"bpm":120,"ampParams":[0,0.1,0.6,0.03],"filterParams":[0,1.12,500,0.05],"typeVals":["square","square","square","square"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0.03,0.23,1.29,-0.16],"frequencyVals":[522,522,522,522],"resonanceVal":3.25,"cutoffVal":1546.0501,"octaveVals":[0,0,1,0],"sequence":[294,null,330,null,350,null,440,null,522,null,440,null,522,null,440,null],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]}
-
-var preset6 = {"voiceNum":1,"bpm":125,"ampParams":[0,0.89,0,0.45],"filterParams":[0,0.14,121.71,0.39],"typeVals":["sawtooth","square","square","sawtooth"],"gainVals":["0.41","0.55","0.74",0.28],"detuneVals":[0.12,0.73,-0.78,0.71],"frequencyVals":[165,165,165,165],"resonanceVal":8.82,"cutoffVal":1632.4001,"octaveVals":[-1,1,-2,0],"sequence":[330,0,165,165,0,330,330,0,165,165,175,330,0,175,330,165],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"delayTime":0,"delayFeedback":0}
-
-preset = preset0;
-
-var bpm,
+	voicesNotes,
+	bpm,
 	delayTime,
 	delayFeedback,
 	voiceNum,  
@@ -301,8 +291,24 @@ var bpm,
 	cutoffVal,
 	octaveVals,
 	sequence,
-	samples,
 	sampleSequence;
+
+const preset0 = {"voiceNum":1,"bpm":125,"ampParams":[0,0.89,0.5,0.45],"filterParams":[0,0.31,1200,0.22],"typeVals":["square","square","sawtooth","sine"],"gainVals":["0.41","0.55","0.74","0.55"],"detuneVals":[0.28,0.27,0.25,0.6],"frequencyVals":[196,196,196,196],"resonanceVal":16.78,"cutoffVal":759.3201,"octaveVals":[-1,0,1,0],"sequence":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"delayTime":0,"delayFeedback":0}
+
+const preset1 = {"voiceNum":1,"bpm":125,"ampParams":[0,0.89,0.5,0.45],"filterParams":[0,0.31,1200,0.22],"typeVals":["square","square","sawtooth","sine"],"gainVals":["0.41","0.55","0.74","0.55"],"detuneVals":[0.28,0.27,0.25,0.6],"frequencyVals":[196,196,196,196],"resonanceVal":16.78,"cutoffVal":759.3201,"octaveVals":[-1,0,1,0],"sequence":[220,0,110,0,110,0,110,0,196,272,220,0,261,220,165,0],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"delayTime":0,"delayFeedback":0}
+
+const preset2 = {"voiceNum":1,"bpm":110,"ampParams":[0,1,0.5,1.44],"filterParams":[0.1,0.59,500,1.38],"typeVals":["square","sawtooth","sawtooth","sine"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0.04,0.3,-0.2,-0.3],"frequencyVals":[131,131,131,131],"resonanceVal":11.52,"cutoffVal":1300.9901,"octaveVals":[-1,0,1,0],"sequence":[220,0,0,0,0,0,0,0,196,0,220,0,261,0,165,0,0,0,0,0,0,0,0,0,147,0,165,0,196,0,131,0,0,0,0,0,0,0,0,0,123,0,131,0,165,0,110,0,0,0,0,0,0,0,0,0,123,0,0,0,131,0,0,0],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,1],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0]]}
+
+const preset3 = {"voiceNum":4,"bpm":66,"ampParams":[0.36,0.69,0.53,0.94],"filterParams":[0,0.24,918.86,0.93],"typeVals":["square","sawtooth","square","sine"],"gainVals":[0.74,0.7,0.61,0.5],"detuneVals":[0.51,-0.97,-0.24,-0.4],"frequencyVals":[110,110,110,110],"resonanceVal":2.73,"cutoffVal":1524.4001,"octaveVals":[1,4,1,0.25],"sequence":[272,0,272,676,110,342,110,0,196,272,220,236,156,220,165,535],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,1,0,1,0,0,0,0,1,0,0,0,1,1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,1,1,0,1,1,0,0,0,1,0,1,1,1,1,1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,1,0,0,1,0,0,1,0,0,0,1,1,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"delayTime":0.09,"delayFeedback":0.8}
+
+const preset4 = {"voiceNum":4,"bpm":110,"ampParams":[0,1,1,1.13],"filterParams":[0,1.08,700,1.08],"typeVals":["sine","sawtooth","sine","sawtooth"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0.41,0.41,0.42,0.56],"frequencyVals":[196,196,196,196],"resonanceVal":9.3,"cutoffVal":1500,"octaveVals":[-1,0,1,2],"sequence":[220,0,0,196,0,0,196,0,0,0,196,0,220,0,220,261],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]}
+
+const preset5 = {"delayFeedback":0.26,"delayTime":0.38,"voiceNum":1,"bpm":120,"ampParams":[0,0.1,0.6,0.03],"filterParams":[0,1.12,500,0.05],"typeVals":["square","square","square","square"],"gainVals":[0.5,0.5,0.5,0.5],"detuneVals":[0.03,0.23,1.29,-0.16],"frequencyVals":[522,522,522,522],"resonanceVal":3.25,"cutoffVal":1546.0501,"octaveVals":[0,0,1,0],"sequence":[294,null,330,null,350,null,440,null,522,null,440,null,522,null,440,null],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]}
+
+const preset6 = {"voiceNum":1,"bpm":125,"ampParams":[0,0.89,0,0.45],"filterParams":[0,0.14,121.71,0.39],"typeVals":["sawtooth","square","square","sawtooth"],"gainVals":["0.41","0.55","0.74",0.28],"detuneVals":[0.12,0.73,-0.78,0.71],"frequencyVals":[165,165,165,165],"resonanceVal":8.82,"cutoffVal":1632.4001,"octaveVals":[-1,1,-2,0],"sequence":[330,0,165,165,0,330,330,0,165,165,175,330,0,175,330,165],"samples":[{},{},{},{},{},{},{}],"sampleSequence":[[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,1,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"delayTime":0,"delayFeedback":0}
+
+preset = preset0;
+
 function setPreset(){
 	bpm = preset.bpm;
 	delayTime = preset.delayTime;  
@@ -375,7 +381,7 @@ function modeClick(myRadio) {
 		else
 			voiceNum = 1;
 		init()
- 
+
 }
 
 function changeDelayTime(e){
@@ -402,22 +408,24 @@ function setOscVal(i){
 	gain[i+currentVoice*oscNum].gain.value = gainVals[i];
 }
 
-var playPitch = (pitch) => {
+function playPitch(pitch) {
 	startPitch(pitch);
 	setTimeout(stopPitch,100,pitch)
 }
 
-var getNextVoice = ()=>{
-
-	a = availableVoices.pop()
-	if (a >= 0)
-		return a
+function getNextVoice() {
+	voice = availableVoices.pop()
+	if (voice >= 0)
+		return voice;
 	else
 		return usedVoices.shift()
 }
-var startPitch = (pitch) => {
+
+function startPitch(pitch) {
 	stopPitch(pitch)
 	currentVoice = getNextVoice()
+	console.log({currentVoice})
+	console.log({voicesNotes})
 	setPitch(pitch);
 	voicesNotes[currentVoice] = pitch;
 	bang(currentVoice);
@@ -425,7 +433,7 @@ var startPitch = (pitch) => {
 }
 
 
-var stopPitch = (pitch) =>{
+function stopPitch(pitch) {
 	for (var i = 0; i < voiceNum; i++){
 		if (voicesNotes[i] == pitch){
 			stopVoice(i);
@@ -487,7 +495,7 @@ var stopVoice = (v)=>{
 }
 
 
-function init(){
+function init() {
 	if (!initiated) {
 		initiated = true;
 		gain = [];
@@ -504,123 +512,149 @@ function init(){
 		context = new AudioContext();
 		
 		var analyser = context.createAnalyser();
-		analyser.fftSize = 2048;
-		var analyser = context.createAnalyser();
+		analyser.fftSize = 256;
 		var bufferLength = analyser.frequencyBinCount;
 		var dataArray = new Uint8Array(bufferLength);
 
 		var canvas = document.getElementById('canvas');
 		var canvasCtx = canvas.getContext('2d');
 
+		var canvas2 = document.getElementById('canvas2');
+		var canvasCtx2 = canvas2.getContext('2d');
+
 		WIDTH = 400;
 		HEIGHT = 150;
 		canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
+		canvasCtx2.clearRect(0, 0, WIDTH, HEIGHT);
 
-		function draw() {
-			var drawVisual = requestAnimationFrame(draw);
-			analyser.getByteTimeDomainData(dataArray);
-			canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+		function draw1() {
+			drawVisual = requestAnimationFrame(draw1);
+
+			analyser.getByteFrequencyData(dataArray);
+
+			canvasCtx.fillStyle = "rgb(0 0 0)";
 			canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-			canvasCtx.lineWidth = 2;
-			canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
-			canvasCtx.beginPath();
-			var sliceWidth = WIDTH * 1.0 / bufferLength;
-			var x = 0;
-			for(var i = 0; i < bufferLength; i++) {
-	 
-						var v = dataArray[i] / 128.0;
-						var y = v * HEIGHT/2;
+			const barWidth = (WIDTH / bufferLength) * 1.5;
+			let barHeight;
+			let x = 0;
+			for (let i = 0; i < bufferLength; i++) {
+				barHeight = dataArray[i] / 2;
 
-						if(i === 0) {
-							canvasCtx.moveTo(x, y);
-						} else {
-							canvasCtx.lineTo(x, y);
-						}
+				canvasCtx.fillStyle = `rgb(${barHeight + 100} 50 50)`;
+				canvasCtx.fillRect(x, HEIGHT - barHeight / 2, barWidth, barHeight);
 
-						x += sliceWidth;
-				}
-				canvasCtx.lineTo(canvas.width, canvas.height/2);
-				canvasCtx.stroke();
-			};
-
-			draw();
-	 
-			currentVoice = 0;
-			for (let i = 0; i < oscNum; i++){
-			buildOscSection(i)
-		}				
-		for (let i = 0; i < sequence.length; i++){
-			buildSynthSeq(i)
-			buildSampleSeq(i)
-		}
-		buildFilterSection()
-		buildAmpSection()
-		buildDelaySection()
-		buildSeqPosition()
-
-		for (var v = 0; v < voiceNum; v++){
-			biquadFilter[v] = context.createBiquadFilter();
-			biquadFilter[v].type = 'lowpass';
-			biquadFilter[v].frequency.value = cutoffVal;
-			biquadFilter[v].Q.value = resonanceVal;
-			voiceGain[v] = context.createGain();
-			voiceGain[v].gain.value = 0;
-			merger[v] = context.createChannelMerger(oscNum);
-
-		}
-		for (var i = 0; i < oscNum; i++){
-			for (var v = 0; v < voiceNum; v++){
-				osc[i+v*oscNum] = context.createOscillator()
-				osc[i+v*oscNum].type = typeVals[i];
-				gain[i+v*oscNum] = context.createGain();
-				gain[i+v*oscNum].gain.value = gainVals[i];
-				osc[i+v*oscNum].connect(gain[i+v*oscNum]);
-				gain[i+v*oscNum].connect(merger[v],0,i);
-				osc[i+v*oscNum].start();
+				x += barWidth + 1;
 			}
 		}
 
-		masterMerger = context.createChannelMerger(voiceNum);
 
-		for (var v = 0; v < voiceNum; v++){
-			merger[v].connect(voiceGain[v])
-			voiceGain[v].connect(biquadFilter[v]);
-			biquadFilter[v].connect(masterMerger,0,v);
-		}
+		function draw2() {
+			var drawVisual = requestAnimationFrame(draw2);
+			analyser.getByteTimeDomainData(dataArray);
+			canvasCtx2.fillStyle = 'rgb(200, 200, 200)';
+			canvasCtx2.fillRect(0, 0, WIDTH, HEIGHT);
+			canvasCtx2.lineWidth = 2;
+			canvasCtx2.strokeStyle = 'rgb(0, 0, 0)';
+			canvasCtx2.beginPath();
+			var sliceWidth = WIDTH * 1.0 / bufferLength;
+			let x = 0;
+			for(var i = 0; i < bufferLength; i++) {
+	
+				var v = dataArray[i] / 128.0;
+				var y = v * HEIGHT/2;
 
-		masterGain = context.createGain();
-		masterMerger.connect(masterGain)
-		if (voiceNum > 1)
-			masterGain.gain.value = 1
-		else 
-			masterGain.gain.value = .35
-
-		delay = context.createDelay();
-		delay.delayTime.value = delayTime || 0;
-
-		feedback = context.createGain();
-		feedback.gain.value = delayFeedback || 0;
-
-		delay.connect(feedback);
-		feedback.connect(delay);
-
-		masterGain.connect(delay);
-		masterGain.connect(analyser);
-		delay.connect(analyser);
-		compressor = context.createDynamicsCompressor() 
-		analyser.connect(compressor);	
-		compressor.connect(context.destination);	
-		request = []
-		for(let i = 0; i < urls.length; i++){
-			request[i] = new XMLHttpRequest();
-				request[i].open('GET', urls[i], true);
-				request[i].responseType = 'arraybuffer';
-			request[i].onload = function() {
-						context.decodeAudioData(request[i].response, function(buffer) {
-							samples[i] = buffer;
-						});
+				if(i === 0) {
+					canvasCtx2.moveTo(x, y);
+				} else {
+					canvasCtx2.lineTo(x, y);
 				}
-				request[i].send()
+
+				x += sliceWidth;
+			}
+			canvasCtx2.lineTo(canvas.width, canvas.height/2);
+			canvasCtx2.stroke();
+
+		};
+
+		draw1();
+		draw2();
+
+		currentVoice = 0;
+		for (let i = 0; i < oscNum; i++){
+		buildOscSection(i)
+	}				
+	for (let i = 0; i < sequence.length; i++){
+		buildSynthSeq(i)
+		buildSampleSeq(i)
+	}
+	buildFilterSection()
+	buildAmpSection()
+	buildDelaySection()
+	buildSeqPosition()
+
+	for (var v = 0; v < voiceNum; v++){
+		biquadFilter[v] = context.createBiquadFilter();
+		biquadFilter[v].type = 'lowpass';
+		biquadFilter[v].frequency.value = cutoffVal;
+		biquadFilter[v].Q.value = resonanceVal;
+		voiceGain[v] = context.createGain();
+		voiceGain[v].gain.value = 0;
+		merger[v] = context.createChannelMerger(oscNum);
+
+	}
+	for (var i = 0; i < oscNum; i++){
+		for (var v = 0; v < voiceNum; v++){
+			osc[i+v*oscNum] = context.createOscillator()
+			osc[i+v*oscNum].type = typeVals[i];
+			gain[i+v*oscNum] = context.createGain();
+			gain[i+v*oscNum].gain.value = gainVals[i];
+			osc[i+v*oscNum].connect(gain[i+v*oscNum]);
+			gain[i+v*oscNum].connect(merger[v],0,i);
+			osc[i+v*oscNum].start();
+		}
+	}
+
+	masterMerger = context.createChannelMerger(voiceNum);
+
+	for (var v = 0; v < voiceNum; v++){
+		merger[v].connect(voiceGain[v])
+		voiceGain[v].connect(biquadFilter[v]);
+		biquadFilter[v].connect(masterMerger,0,v);
+	}
+
+	masterGain = context.createGain();
+	masterMerger.connect(masterGain)
+	if (voiceNum > 1)
+		masterGain.gain.value = 1
+	else 
+		masterGain.gain.value = .35
+
+	delay = context.createDelay();
+	delay.delayTime.value = delayTime || 0;
+
+	feedback = context.createGain();
+	feedback.gain.value = delayFeedback || 0;
+
+	delay.connect(feedback);
+	feedback.connect(delay);
+
+	masterGain.connect(delay);
+	masterGain.connect(analyser);
+	delay.connect(analyser);
+	compressor = context.createDynamicsCompressor() 
+	analyser.connect(compressor);	
+	compressor.connect(context.destination);	
+	request = []
+	for(let i = 0; i < urls.length; i++){
+		request[i] = new XMLHttpRequest();
+			request[i].open('GET', urls[i], true);
+			request[i].responseType = 'arraybuffer';
+			request[i].onload = function() {
+					context.decodeAudioData(request[i].response, function(buffer) {
+						samples[i] = buffer;
+					});
+			}
+			request[i].send()
 		}
 	}
 	availableVoices = [] 
@@ -640,7 +674,7 @@ function playSound(buffer) {
 	source.connect(source.gain);       
 	source.gain.connect(context.destination);       
 	source.start(0);                           // play the source now
-																						 // note: on older systems, may have to use deprecated noteOn(time);
+																						// note: on older systems, may have to use deprecated noteOn(time);
 }
 
 function startSeq(){

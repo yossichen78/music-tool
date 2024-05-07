@@ -139,8 +139,7 @@ function buildDelaySection() {
 	while (elem.firstChild) {
 			elem.removeChild(elem.firstChild);
 	}
-	console.log(delayTime)
-	console.log(delayFeedback)
+
 	elemString = "Delay Time: <input min='0' step='0.01' max='1' type='range' oninput='changeDelayTime(event)' value='"+(delayTime || 0)+"' /> Feedback: <input min='0' step='0.01' max='1' type='range' oninput='changeDelayFeedback(event)' value='"+(delayFeedback || 0)+"'/>";
 		elem.insertAdjacentHTML('beforeend', elemString)
 }
@@ -252,8 +251,6 @@ const keyboardMidiMap = {
 }
 
 function changeSampleSeq(e,i,j){
-	console.log(e.target.checked)
-	console.log(e.target.checked ? 1 : 0)
 	sampleSequence[i][j] = e.target.checked ? 1 : 0;
 }
 const urls = ["https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/kick/Kick03.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/snare/Snare10.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/clap/Clap01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/closedHH/Closedhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/openHH/Openhat01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/tom/Tom01.wav","https://raw.githubusercontent.com/yossichen78/music-tool/master/samples/perc/Perc02.wav"]
@@ -674,7 +671,6 @@ function playSound(buffer) {
 	source.connect(source.gain);       
 	source.gain.connect(context.destination);       
 	source.start(0);                           // play the source now
-																						// note: on older systems, may have to use deprecated noteOn(time);
 }
 
 function startSeq(){
@@ -683,14 +679,13 @@ function startSeq(){
 		playing = true;
 		loop();
 	}
-
 }
-recordMode = false;
+
 function loop(){
 	elem = document.getElementById('seqPosition'+seqPosition)
 	elem.checked = !elem.checked
 
-
+	console.log(osc)
 	if (sequence[seqPosition] > 20){
 		playPitch(parseFloat(sequence[seqPosition]))
 	}
